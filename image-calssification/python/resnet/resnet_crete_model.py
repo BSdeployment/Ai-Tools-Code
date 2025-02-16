@@ -2,18 +2,18 @@ import tensorflow as tf
 from tensorflow.keras.preprocessing import image_dataset_from_directory
 from tensorflow.keras import layers
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.applications import EfficientNetB0
-from tensorflow.keras.applications.efficientnet import preprocess_input
+from tensorflow.keras.applications import ResNet50
+from tensorflow.keras.applications.resnet import preprocess_input
 
 # הגדרות נתיב לתקיות
-train_dir = "D:/ai/1tensorflow/traindata"
-validation_dir = "D:/ai/1tensorflow/testdata"
+train_dir = r"D:\ai\1tensorflow\traindata"
+validation_dir = r"D:\ai\1tensorflow\testdata"
 
 # פרמטרים בסיסיים
 batch_size = 32
-img_size = (224, 224)  # גודל תמונה שמתאים ל-EfficientNet
+img_size = (224, 224)  # ResNet מצפה לגודל זה
 
-# יצירת סט נתונים
+# יצירת סט הנתונים
 train_dataset = image_dataset_from_directory(
     train_dir,
     shuffle=True,
@@ -28,28 +28,28 @@ validation_dataset = image_dataset_from_directory(
     image_size=img_size,
 )
 
-# הוספת עיבוד מקדים לסט הנתונים
+# הוספת עיבוד מקדים
 def preprocess(dataset):
     return dataset.map(lambda x, y: (preprocess_input(x), y))
 
 train_dataset = preprocess(train_dataset)
 validation_dataset = preprocess(validation_dataset)
 
-# שיפור ביצועים באמצעות cache
+# שיפור ביצועים
 AUTOTUNE = tf.data.AUTOTUNE
 train_dataset = train_dataset.cache().prefetch(buffer_size=AUTOTUNE)
 validation_dataset = validation_dataset.cache().prefetch(buffer_size=AUTOTUNE)
 
-# בניית מודל EfficientNet
-base_model = EfficientNetB0(include_top=False, weights='imagenet', input_shape=(224, 224, 3))
-base_model.trainable = False  # קיפאון משקלות הבסיס (fine-tuning בשלב מאוחר יותר)
+# יצירת מודל ResNet50
+base_model = ResNet50(include_top=False, weights='imagenet', input_shape=(224, 224, 3))
+base_model.trainable = False  # קיפאון משקלות הבסיס
 
 model = Sequential([
     layers.Input(shape=(224, 224, 3)),
     base_model,
     layers.GlobalAveragePooling2D(),
     layers.Dropout(0.2),
-    layers.Dense(2, activation='softmax')  # שתי קטגוריות: male ו-female
+    layers.Dense(2, activation='softmax')  # 2 קטגוריות: male / female
 ])
 
 model.compile(
@@ -67,4 +67,4 @@ history = model.fit(
 )
 
 # שמירת המודל
-model.save("efficientnet_gender_classifier.h5")
+model.save("resnet_gender_classifier.h5")
